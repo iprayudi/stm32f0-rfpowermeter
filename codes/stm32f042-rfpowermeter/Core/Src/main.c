@@ -19,11 +19,13 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "usb_device.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "ssd1306.h"
 #include "stdio.h"
+#include "usbd_cdc_if.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -52,7 +54,7 @@ static uint16_t avgValue;
 static float p_in_V;
 static float p_in_dB;
 uint16_t read_update;
-char dispBuffer[16];
+char dispBuffer[18];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -101,6 +103,7 @@ int main(void)
   MX_DMA_Init();
   MX_ADC_Init();
   MX_I2C1_Init();
+  MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
   ssd1306_Init();
   ssd1306_Fill(Black);
@@ -167,7 +170,14 @@ int main(void)
 				  (char)((fpart<0)?(fpart*-1):fpart));
 		  ssd1306_WriteString(dispBuffer, Font_11x18, White);
 		  ssd1306_UpdateScreen();
+		  memset(dispBuffer,0, sizeof(dispBuffer));
 
+		  sprintf(dispBuffer, "%c%2d.%d\n",
+		  				  (char)((ipart<0)?'-':' '),
+		  				  ((ipart<0)?(ipart*-1):ipart),
+		  				  (char)((fpart<0)?(fpart*-1):fpart));
+		  CDC_Transmit_FS((uint8_t*)dispBuffer, sizeof(dispBuffer));
+		  memset(dispBuffer,0, sizeof(dispBuffer));
 
 		  HAL_ADC_Start_DMA(&hadc, (uint32_t *) adcBuffer, ADC_BUFFER_SIZE);
 
@@ -221,8 +231,10 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_I2C1;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB|RCC_PERIPHCLK_I2C1;
   PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_HSI;
+  PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_HSI48;
+
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();

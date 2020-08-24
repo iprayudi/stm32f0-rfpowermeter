@@ -73,6 +73,8 @@ void HAL_MspInit(void)
 
   /* System interrupt init*/
 
+  __HAL_REMAP_PIN_ENABLE(HAL_REMAP_PA11_PA12);
+
   /* USER CODE BEGIN MspInit 1 */
 
   /* USER CODE END MspInit 1 */
